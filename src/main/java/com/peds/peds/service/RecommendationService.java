@@ -167,7 +167,7 @@ public class RecommendationService {
         }
 
         // Transmission: maximum 15
-        if (product.getTransmission() != null) {
+        if (product.getTransmission() != null) { 
             String transmission =
                     product.getTransmission().toLowerCase();
 

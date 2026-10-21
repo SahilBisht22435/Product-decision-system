@@ -167,31 +167,80 @@ public Map<String, Object> checkSourceAvailability(String sourceUrl) {
                     "message",
                     "Server responded, but the requested page was not found."
             );
-        } else if (status >= 300 && status < 400) {
-            result.put(
-                    "message",
-                    "Server responded with a redirect. The destination was not checked."
-            );
-        } else {
-            result.put(
-                    "message",
-                    "Server responded with HTTP status " + status + "."
-            );
-        }
+        
+} else if (status >= 300 && status < 400) {
+    String location = response.headers()
+            .firstValue("Location")
+            .orElse(null);
 
-    } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        result.put("message", "Source check was interrupted.");
-    } catch (IllegalArgumentException e) {
-        result.put("message", "The source URL is invalid.");
-    } catch (Exception e) {
+    result.put("redirectUrl", location);
+
+    if (location == null || location.isBlank()) {
         result.put(
                 "message",
-                "No usable HTTP response was received. The source may be unavailable or the request may have been blocked."
+                "Server returned a redirect without a destination."
         );
-    }
+    } else {
+        try {
+            URI redirectUri = uri.resolve(location);
+            String redirectHost = redirectUri.getHost();
 
-    return result;
+            boolean validHttps =
+                    "https".equalsIgnoreCase(redirectUri.getScheme())
+                    && redirectHost != null
+                    && redirectUri.getUserInfo() == null
+                    && (redirectUri.getPort() == -1
+                        || redirectUri.getPort() == 443);
+
+            boolean approvedRedirectHost = validHttps
+                    && ALLOWED_DOMAINS.stream().anyMatch(domain ->
+                            redirectHost.equalsIgnoreCase(domain)
+                            || redirectHost.toLowerCase(Locale.ROOT)
+                                    .endsWith("." + domain));
+
+            result.put(
+                    "redirectDestinationApproved",
+                    approvedRedirectHost
+            );
+
+            result.put(
+                    "message",
+                    approvedRedirectHost
+                            ? "Redirect destination is on the approved domain list, but has not been checked."
+                            : "Redirect destination is not approved or is not a valid HTTPS URL."
+            );
+
+        } catch (IllegalArgumentException ex) {
+            result.put(
+                    "redirectDestinationApproved",
+                    false
+            );
+
+            result.put(
+                    "message",
+                    "The redirect destination is invalid."
+            );
+        }
+    }
+} else {
+    result.put(
+            "message",
+            "Server responded with HTTP status " + status + "."
+    );
 }
 
+} catch (InterruptedException e) {
+    Thread.currentThread().interrupt();
+    result.put("message", "Source check was interrupted.");
+} catch (IllegalArgumentException e) {
+    result.put("message", "The source URL is invalid.");
+} catch (Exception e) {
+    result.put(
+            "message",
+            "No usable HTTP response was received. The source may be unavailable or the request may have been blocked."
+    );
+}
+
+return result;
+}
 }

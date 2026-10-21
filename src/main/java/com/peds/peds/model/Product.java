@@ -2,10 +2,14 @@
 package com.peds.peds.model;
 import java.util.ArrayList;
 import java.util.List;
-
+import jakarta.validation.constraints.Pattern;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.validation.constraints.NotBlank;
 
+// import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Positive;
+// import jakarta.validation.Valid;
 @Document(collection = "products")
 public class Product {
 
@@ -16,13 +20,26 @@ public class Product {
     private String lastVerifiedDate;
     private List<Evidence> evidence = new ArrayList<>();
     private List<VerificationHistory> verificationHistory = new ArrayList<>();
+
     // Common product details
-    private String name;
-    private String brand;
-    private double price;
-    private String category = "LAPTOP";
+@NotBlank(message = "Product name cannot be blank")
+private String name;
+
+@NotBlank(message = "Brand cannot be blank")
+private String brand;
+
+@Positive(message = "Price must be greater than zero")
+private double price;
+
+@NotBlank(message = "Category cannot be blank")
+@Pattern(
+    regexp = "(?i)\\s*(LAPTOP|SMARTPHONE|CAR)\\s*",
+    message = "Category must be LAPTOP, SMARTPHONE, or CAR"
+)
+private String category = "LAPTOP";
     
-    // Laptop specifications
+   
+// Laptop specifications
     private int ram;
     private int storage;
     private double batteryHours;
@@ -32,7 +49,6 @@ public class Product {
     private double screenSize;
     private int cameraMP;
     private int batteryMah;
-
     // Car specifications
     private String fuelType;
     private String transmission;

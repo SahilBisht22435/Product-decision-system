@@ -18,30 +18,23 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final RecommendationService recommendationService;
-
+    private final EvidenceService evidenceService;
     public ProductService(
-            ProductRepository productRepository,
-            RecommendationService recommendationService) {
-        this.productRepository = productRepository;
-        this.recommendationService = recommendationService;
-    }
+        ProductRepository productRepository,
+        RecommendationService recommendationService,
+        EvidenceService evidenceService) {
+
+    this.productRepository = productRepository;
+    this.recommendationService = recommendationService;
+    this.evidenceService = evidenceService;
+}
 
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-    // Filter products by category and budget
-    
-public List<Product> getRecommendedProductsByBudget(
-        String category, double budget) {
+   
 
-    return productRepository.findAll().stream()
-            .filter(product -> category != null
-                    && category.equalsIgnoreCase(product.getCategory()))
-            .filter(product -> product.getPrice() > 0
-                    && product.getPrice() <= budget)
-            .toList();
-}
 
 
     // Filter and rank products by suitability score
@@ -57,24 +50,75 @@ public List<Product> getRecommendedProductsByBudget(
     //             .toList();
     // }
 
+ // Filter products by category and budget
 
 public List<RankedProductResponse> getRankedProductsByBudget(
         String category, double budget) {
 
-    return productRepository.findAll().stream()
-            .filter(product -> category != null
-                    && category.equalsIgnoreCase(product.getCategory()))
-            .filter(product -> product.getPrice() > 0
-                    && product.getPrice() <= budget)
-            .sorted((p1, p2) -> Integer.compare(
-                    recommendationService.calculateScore(p2),
-                    recommendationService.calculateScore(p1)))
+    List<Product> products =
+            productRepository.findByCategoryAndPriceRange(
+                    category, 0, budget);
+
+    return products.stream()
+            .filter(this::hasValidSpecifications)
             .map(product -> new RankedProductResponse(
                     product,
                     recommendationService.calculateScore(product),
-                    getRecommendationReasons(product)))
+                    getRecommendationReasons(product),
+                    evidenceService.calculateConfidenceScore(product)))
+            .sorted((p1, p2) -> Integer.compare(
+                    p2.getOverallScore(),
+                    p1.getOverallScore()))
             .toList();
 }
+
+public List<Product> getRecommendedProductsByBudget(
+        String category, double budget) {
+
+    return productRepository.findByCategoryAndPriceRange(
+                    category, 0, budget)
+            .stream()
+            .filter(this::hasValidSpecifications)
+            .toList();
+}
+
+private boolean hasValidSpecifications(Product product) {
+
+    if (product.getPrice() <= 0) {
+        return false;
+    }
+
+    String category = product.getCategory();
+
+    if (category == null) {
+        return false;
+    }
+
+    switch (category.trim().toUpperCase()) {
+        case "LAPTOP":
+            return product.getRam() > 0
+                    && product.getStorage() > 0
+                    && product.getBatteryHours() > 0
+                    && product.getWeight() > 0;
+
+        case "SMARTPHONE":
+            return product.getScreenSize() > 0
+                    && product.getCameraMP() > 0
+                    && product.getBatteryMah() > 0;
+
+        case "CAR":
+            return product.getMileage() > 0
+                    && product.getSeatingCapacity() > 0
+                    && product.getFuelType() != null
+                    && !product.getFuelType().isBlank()
+                    && product.getTransmission() != null
+                    && !product.getTransmission().isBlank();
+
+        default:
+            return false;
+    }
+}
+
 
 private List<String> getRecommendationReasons(Product product) {
     List<String> reasons = new ArrayList<>();
@@ -325,7 +369,11 @@ VerificationHistory history = new VerificationHistory(
     boolean allVerified = product.getEvidence() != null
             && !product.getEvidence().isEmpty()
             && product.getEvidence().stream()
-                    .allMatch(Evidence::isVerified);
+                    .allMatch(item ->
+                            item != null
+                            && item.isVerified()
+                            && "VERIFIED".equals(item.getReviewStatus())
+                    );
 
     product.setVerified(allVerified);
 
@@ -338,6 +386,7 @@ VerificationHistory history = new VerificationHistory(
     productRepository.save(product);
 
     return evidence;
+
 }
 
 
@@ -356,4 +405,58 @@ public List<VerificationHistory> getVerificationHistory(
     return product.getVerificationHistory();
 }
 
+public String explainTopRankedProducts(
+        String category, double budget) {
+
+    List<RankedProductResponse> products =
+            getRankedProductsByBudget(category, budget);
+
+    if (products.isEmpty()) {
+        return "No products found for the selected category and budget.";
+    }
+
+    if (products.size() == 1) {
+        return "Only one product matches the selected category and budget: "
+                + products.get(0).getProduct().getName()
+                + ". There is no second product to compare.";
+    }
+
+    RankedProductResponse first = products.get(0);
+    RankedProductResponse second = products.get(1);
+
+    String firstName = first.getProduct().getName();
+    String secondName = second.getProduct().getName();
+
+    int scoreDifference =
+            first.getOverallScore() - second.getOverallScore();
+
+    String explanation = firstName + " ranks above " + secondName
+            + " with an overall score of " + first.getOverallScore()
+            + " compared with " + second.getOverallScore()
+            + ". The score difference is " + scoreDifference + " points.";
+
+    if (first.getSuitabilityScore() > second.getSuitabilityScore()) {
+        explanation += " " + firstName
+                + " has the higher suitability score.";
+    } else if (first.getSuitabilityScore() < second.getSuitabilityScore()) {
+        explanation += " " + secondName
+                + " has the higher suitability score.";
+    } else {
+        explanation += " Both products have equal suitability scores.";
+    }
+
+    if (first.getEvidenceConfidenceScore()
+            > second.getEvidenceConfidenceScore()) {
+        explanation += " " + firstName
+                + " has the higher evidence-confidence score.";
+    } else if (first.getEvidenceConfidenceScore()
+            < second.getEvidenceConfidenceScore()) {
+        explanation += " " + secondName
+                + " has the higher evidence-confidence score.";
+    } else {
+        explanation += " Both products have equal evidence-confidence scores.";
+    }
+
+    return explanation;
+}
 }

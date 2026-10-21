@@ -65,18 +65,99 @@ public class ProductController {
         return productService.compareProductsByName(names);
     }
 
-    @PostMapping
-    public Product addProduct(@RequestBody Product product) {
-        return productService.addProduct(product);
+@PostMapping
+public Product addProduct(@Valid @RequestBody Product product) {
+
+    String category = product.getCategory();
+
+    if (category != null) {
+        category = category.trim().toUpperCase();
+        product.setCategory(category);
     }
 
+    if ("LAPTOP".equals(category)) {
+
+        if (product.getRam() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "RAM must be greater than zero");
+        }
+
+        if (product.getStorage() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Storage must be greater than zero");
+        }
+
+        if (product.getBatteryHours() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Battery hours must be greater than zero");
+        }
+
+        if (product.getWeight() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Weight must be greater than zero");
+        }
+
+    } else if ("SMARTPHONE".equals(category)) {
+
+        if (product.getScreenSize() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Screen size must be greater than zero");
+        }
+
+        if (product.getCameraMP() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Camera megapixels must be greater than zero");
+        }
+
+        if (product.getBatteryMah() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Battery capacity must be greater than zero");
+        }
+
+    } else if ("CAR".equals(category)) {
+
+        if (product.getMileage() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Mileage must be greater than zero");
+        }
+
+        if (product.getSeatingCapacity() <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Seating capacity must be greater than zero");
+        }
+    }
+
+    return productService.addProduct(product);
+}
 
     
+
+
 @GetMapping("/category/{category}")
 public List<Product> getProductsByCategory(
         @PathVariable String category) {
-    return productService.getProductsByCategory(category);
+
+    category = category.trim();
+
+    if (!category.matches("(?i)LAPTOP|SMARTPHONE|CAR")) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Category must be LAPTOP, SMARTPHONE, or CAR"
+        );
+    }
+
+    return productService.getProductsByCategory(category.toUpperCase());
 }
+
 
 
 @GetMapping("/recommend-by-budget")
@@ -95,6 +176,14 @@ public List<RankedProductResponse> getRankedProductsByBudget(
         @RequestParam double budget) {
 
     return productService.getRankedProductsByBudget(
+            category, budget);
+}
+@GetMapping("/ranking-explanation")
+public String getRankingExplanation(
+        @RequestParam String category,
+        @RequestParam double budget) {
+
+    return productService.explainTopRankedProducts(
             category, budget);
 }
 
@@ -124,6 +213,28 @@ public Map<String, Object> getEvidenceScore(
     response.put("evidenceConfidenceScore", score);
 
     return response;
+}
+
+@PostMapping("/{productId}/evidence")
+public Product addEvidenceToProduct(
+        @PathVariable String productId,
+        @RequestBody Evidence evidence) {
+
+    Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Product not found"));
+
+    if (product.getEvidence() == null) {
+        product.setEvidence(new ArrayList<>());
+    }
+
+    evidence.setVerified(false);
+    evidence.setReviewStatus("PENDING_REVIEW");
+
+    product.getEvidence().add(evidence);
+
+    return productRepository.save(product);
 }
 
 
@@ -312,6 +423,11 @@ item.put("reviewStatus", reviewStatus);
 item.put("recordedVerifiedFlag", evidence.isVerified());
 item.put("claimAccuracyIndependentlyConfirmed", false);
 
+item.put(
+        "independentConfirmationWarning",
+        "Review status indicates the review decision only. "
+                + "Claim accuracy has not been independently confirmed."
+);
 
 // if (fieldsValid && reachable) {
 //     totalScore += 40.0 / totalClaims;
