@@ -8,13 +8,16 @@ public class EvidenceReviewRequest {
 
     @NotBlank(message = "Decision is required")
     @Pattern(
-        regexp = "VERIFIED|REJECTED|PENDING_REVIEW",
-        message = "Decision must be VERIFIED, REJECTED, or PENDING_REVIEW"
+            regexp = "(?i)VERIFIED|REJECTED|PENDING_REVIEW",
+            message = "Decision must be VERIFIED, REJECTED, or PENDING_REVIEW"
     )
     private String decision;
 
     @NotBlank(message = "Review notes are required")
     private String notes;
+
+    public EvidenceReviewRequest() {
+    }
 
     public String getDecision() {
         return decision;

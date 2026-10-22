@@ -27,7 +27,9 @@ public class VerificationHistory {
         this.sourceName = sourceName;
         this.sourceUrl = sourceUrl;
         this.action = action;
-        this.verifiedAt = verifiedAt;
+        this.verifiedAt = verifiedAt != null
+                ? verifiedAt
+                : LocalDateTime.now();
         this.notes = notes;
     }
 

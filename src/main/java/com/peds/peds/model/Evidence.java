@@ -1,23 +1,30 @@
-//Each evidence record stores a source name, its URL, the claim it supports, and whether that claim has been verified.
 
 package com.peds.peds.model;
+
+import java.util.Locale;
 
 public class Evidence {
 
     private String sourceName;
     private String sourceUrl;
     private String claim;
-    private boolean verified;
+
+    private Boolean verified = false;
     private String reviewStatus = "PENDING_REVIEW";
+
     public Evidence() {
     }
 
-    public Evidence(String sourceName, String sourceUrl,
-                    String claim, boolean verified) {
+    public Evidence(
+            String sourceName,
+            String sourceUrl,
+            String claim,
+            Boolean verified) {
+
         this.sourceName = sourceName;
         this.sourceUrl = sourceUrl;
         this.claim = claim;
-        this.verified = verified;
+        setVerified(verified);
     }
 
     public String getSourceName() {
@@ -44,19 +51,55 @@ public class Evidence {
         this.claim = claim;
     }
 
-    public boolean isVerified() {
-        return verified;
+    public Boolean isVerified() {
+        return Boolean.TRUE.equals(verified);
     }
 
-    public void setVerified(boolean verified) {
-        this.verified = verified;
+    public void setVerified(Boolean verified) {
+        this.verified = verified != null ? verified : false;
+
+        if (Boolean.TRUE.equals(this.verified)) {
+            this.reviewStatus = "VERIFIED";
+        } else if ("VERIFIED".equalsIgnoreCase(this.reviewStatus)) {
+            this.reviewStatus = "PENDING_REVIEW";
+        }
     }
 
     public String getReviewStatus() {
-    return reviewStatus;
-}
+        return reviewStatus;
+    }
 
     public void setReviewStatus(String reviewStatus) {
-        this.reviewStatus = reviewStatus;
+
+        if (reviewStatus == null || reviewStatus.isBlank()) {
+            this.reviewStatus = "PENDING_REVIEW";
+            this.verified = false;
+            return;
+        }
+
+        String normalizedStatus =
+                reviewStatus.trim().toUpperCase(Locale.ROOT);
+
+        switch (normalizedStatus) {
+            case "VERIFIED":
+                this.reviewStatus = "VERIFIED";
+                this.verified = true;
+                break;
+
+            case "REJECTED":
+                this.reviewStatus = "REJECTED";
+                this.verified = false;
+                break;
+
+            case "PENDING_REVIEW":
+                this.reviewStatus = "PENDING_REVIEW";
+                this.verified = false;
+                break;
+
+            default:
+                this.reviewStatus = "PENDING_REVIEW";
+                this.verified = false;
+                break;
+        }
     }
 }

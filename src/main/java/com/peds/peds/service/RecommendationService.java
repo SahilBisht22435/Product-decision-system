@@ -2,70 +2,90 @@
 package com.peds.peds.service;
 
 import com.peds.peds.model.Product;
+
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 public class RecommendationService {
 
     public int calculateScore(Product product) {
 
-        String category = product.getCategory();
-
-        if (category == null) {
+        if (product == null || product.getCategory() == null) {
             return 0;
         }
 
-        switch (category.toUpperCase()) {
+        String category = product.getCategory()
+                .trim()
+                .toUpperCase(Locale.ROOT);
+
+        int score;
+
+        switch (category) {
             case "LAPTOP":
-                return calculateLaptopScore(product);
+                score = calculateLaptopScore(product);
+                break;
 
             case "SMARTPHONE":
-                return calculateSmartphoneScore(product);
+                score = calculateSmartphoneScore(product);
+                break;
 
             case "CAR":
-                return calculateCarScore(product);
+                score = calculateCarScore(product);
+                break;
 
             default:
                 return 0;
         }
+
+        return Math.max(0, Math.min(100, score));
     }
 
     // Laptop score: maximum 100
     private int calculateLaptopScore(Product product) {
+
         int score = 0;
 
         // RAM: maximum 30
-        if (product.getRam() >= 16) {
+        double ram = product.getRam();
+
+        if (Double.isFinite(ram) && ram >= 16) {
             score += 30;
-        } else if (product.getRam() >= 8) {
+        } else if (Double.isFinite(ram) && ram >= 8) {
             score += 20;
         }
 
         // Storage: maximum 25
-        if (product.getStorage() >= 1024) {
+        double storage = product.getStorage();
+
+        if (Double.isFinite(storage) && storage >= 1024) {
             score += 25;
-        } else if (product.getStorage() >= 512) {
+        } else if (Double.isFinite(storage) && storage >= 512) {
             score += 20;
-        } else if (product.getStorage() > 0) {
+        } else if (Double.isFinite(storage) && storage > 0) {
             score += 10;
         }
 
         // Battery life: maximum 25
-        if (product.getBatteryHours() >= 8) {
+        double batteryHours = product.getBatteryHours();
+
+        if (Double.isFinite(batteryHours) && batteryHours >= 8) {
             score += 25;
-        } else if (product.getBatteryHours() >= 6) {
+        } else if (Double.isFinite(batteryHours) && batteryHours >= 6) {
             score += 20;
-        } else if (product.getBatteryHours() > 0) {
+        } else if (Double.isFinite(batteryHours) && batteryHours > 0) {
             score += 10;
         }
 
         // Weight: maximum 20
-        if (product.getWeight() > 0 && product.getWeight() <= 1.5) {
+        double weight = product.getWeight();
+
+        if (Double.isFinite(weight) && weight > 0 && weight <= 1.5) {
             score += 20;
-        } else if (product.getWeight() > 1.5
-                && product.getWeight() <= 1.8) {
+        } else if (Double.isFinite(weight) && weight > 1.5 && weight <= 1.8) {
             score += 15;
-        } else if (product.getWeight() > 1.8) {
+        } else if (Double.isFinite(weight) && weight > 1.8) {
             score += 10;
         }
 
@@ -74,55 +94,67 @@ public class RecommendationService {
 
     // Smartphone score: maximum 100
     private int calculateSmartphoneScore(Product product) {
+
         int score = 0;
 
         // RAM: maximum 20
-        if (product.getRam() >= 12) {
+        double ram = product.getRam();
+
+        if (Double.isFinite(ram) && ram >= 12) {
             score += 20;
-        } else if (product.getRam() >= 8) {
+        } else if (Double.isFinite(ram) && ram >= 8) {
             score += 15;
-        } else if (product.getRam() >= 4) {
+        } else if (Double.isFinite(ram) && ram >= 4) {
             score += 10;
         }
 
         // Storage: maximum 20
-        if (product.getStorage() >= 512) {
+        double storage = product.getStorage();
+
+        if (Double.isFinite(storage) && storage >= 512) {
             score += 20;
-        } else if (product.getStorage() >= 256) {
+        } else if (Double.isFinite(storage) && storage >= 256) {
             score += 15;
-        } else if (product.getStorage() >= 128) {
+        } else if (Double.isFinite(storage) && storage >= 128) {
             score += 10;
-        } else if (product.getStorage() > 0) {
+        } else if (Double.isFinite(storage) && storage > 0) {
             score += 5;
         }
 
         // Camera resolution: maximum 20
-        if (product.getCameraMP() >= 100) {
+        double cameraMP = product.getCameraMP();
+
+        if (Double.isFinite(cameraMP) && cameraMP >= 100) {
             score += 20;
-        } else if (product.getCameraMP() >= 50) {
+        } else if (Double.isFinite(cameraMP) && cameraMP >= 50) {
             score += 15;
-        } else if (product.getCameraMP() >= 12) {
+        } else if (Double.isFinite(cameraMP) && cameraMP >= 12) {
             score += 10;
-        } else if (product.getCameraMP() > 0) {
+        } else if (Double.isFinite(cameraMP) && cameraMP > 0) {
             score += 5;
         }
 
         // Battery capacity: maximum 25
-        if (product.getBatteryMah() >= 6000) {
+        double batteryMah = product.getBatteryMah();
+
+        if (Double.isFinite(batteryMah) && batteryMah >= 6000) {
             score += 25;
-        } else if (product.getBatteryMah() >= 5000) {
+        } else if (Double.isFinite(batteryMah) && batteryMah >= 5000) {
             score += 20;
-        } else if (product.getBatteryMah() >= 4000) {
+        } else if (Double.isFinite(batteryMah) && batteryMah >= 4000) {
             score += 15;
-        } else if (product.getBatteryMah() > 0) {
+        } else if (Double.isFinite(batteryMah) && batteryMah > 0) {
             score += 5;
         }
 
         // Screen size: maximum 15
-        if (product.getScreenSize() >= 6.5
-                && product.getScreenSize() <= 6.9) {
+        double screenSize = product.getScreenSize();
+
+        if (Double.isFinite(screenSize)
+                && screenSize >= 6.5
+                && screenSize <= 6.9) {
             score += 15;
-        } else if (product.getScreenSize() > 0) {
+        } else if (Double.isFinite(screenSize) && screenSize > 0) {
             score += 10;
         }
 
@@ -131,49 +163,68 @@ public class RecommendationService {
 
     // Car score: maximum 100
     private int calculateCarScore(Product product) {
+
         int score = 0;
 
         // Mileage: maximum 40
-        if (product.getMileage() >= 25) {
+        double mileage = product.getMileage();
+
+        if (Double.isFinite(mileage) && mileage >= 25) {
             score += 40;
-        } else if (product.getMileage() >= 20) {
+        } else if (Double.isFinite(mileage) && mileage >= 20) {
             score += 30;
-        } else if (product.getMileage() >= 15) {
+        } else if (Double.isFinite(mileage) && mileage >= 15) {
             score += 20;
-        } else if (product.getMileage() > 0) {
+        } else if (Double.isFinite(mileage) && mileage > 0) {
             score += 10;
         }
 
         // Seating capacity: maximum 25
-        if (product.getSeatingCapacity() >= 7) {
+        double seatingCapacity = product.getSeatingCapacity();
+
+        if (Double.isFinite(seatingCapacity) && seatingCapacity >= 7) {
             score += 25;
-        } else if (product.getSeatingCapacity() >= 5) {
+        } else if (Double.isFinite(seatingCapacity) && seatingCapacity >= 5) {
             score += 20;
-        } else if (product.getSeatingCapacity() > 0) {
+        } else if (Double.isFinite(seatingCapacity) && seatingCapacity > 0) {
             score += 10;
         }
 
         // Fuel type: maximum 20
-        if (product.getFuelType() != null) {
-            String fuel = product.getFuelType().toLowerCase();
+        String fuelType = product.getFuelType();
 
-            if (fuel.equals("cng") || fuel.equals("electric")) {
-                score += 20;
-            } else if (fuel.equals("hybrid")) {
-                score += 18;
-            } else if (fuel.equals("petrol") || fuel.equals("diesel")) {
-                score += 15;
+        if (fuelType != null) {
+            String fuel = fuelType.trim().toLowerCase(Locale.ROOT);
+
+            switch (fuel) {
+                case "cng":
+                case "electric":
+                    score += 20;
+                    break;
+
+                case "hybrid":
+                    score += 18;
+                    break;
+
+                case "petrol":
+                case "diesel":
+                    score += 15;
+                    break;
+
+                default:
+                    break;
             }
         }
 
         // Transmission: maximum 15
-        if (product.getTransmission() != null) { 
-            String transmission =
-                    product.getTransmission().toLowerCase();
+        String transmission = product.getTransmission();
 
-            if (transmission.equals("automatic")) {
+        if (transmission != null) {
+            String type = transmission.trim().toLowerCase(Locale.ROOT);
+
+            if ("automatic".equals(type)) {
                 score += 15;
-            } else if (transmission.equals("manual")) {
+            } else if ("manual".equals(type)) {
                 score += 10;
             }
         }

@@ -1,9 +1,12 @@
 
 package com.peds.peds.dto;
 
-import com.peds.peds.model.Product;
 import com.peds.peds.model.Evidence;
+import com.peds.peds.model.Product;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class RankedProductResponse {
 
@@ -18,7 +21,6 @@ public class RankedProductResponse {
     private String overallExplanation;
     private String rankingExplanation;
 
-
     public RankedProductResponse(
             Product product,
             int suitabilityScore,
@@ -26,21 +28,45 @@ public class RankedProductResponse {
             int evidenceConfidenceScore) {
 
         this.product = product;
-        this.suitabilityScore = suitabilityScore;
-        this.reasons = reasons;
-        this.evidenceConfidenceScore = evidenceConfidenceScore;
 
-        this.suitabilityContribution = Math.round(suitabilityScore * 0.70 * 100.0) / 100.0;
-        this.evidenceContribution = Math.round(evidenceConfidenceScore * 0.30 * 100.0) / 100.0;
-        this.overallScore = (int) Math.round(
-                suitabilityContribution + evidenceContribution);
+        this.suitabilityScore = clampScore(suitabilityScore);
+        this.evidenceConfidenceScore = clampScore(evidenceConfidenceScore);
+
+        this.reasons = reasons == null
+                ? new ArrayList<>()
+                : new ArrayList<>(reasons);
+
+        this.suitabilityContribution =
+                roundToTwoDecimals(this.suitabilityScore * 0.70);
+
+        this.evidenceContribution =
+                roundToTwoDecimals(this.evidenceConfidenceScore * 0.30);
+
+        this.overallScore = clampScore(
+                (int) Math.round(
+                        suitabilityContribution + evidenceContribution
+                )
+        );
 
         this.evidenceStatus = determineEvidenceStatus(product);
         this.overallExplanation = generateOverallExplanation();
         this.rankingExplanation = generateRankingExplanation();
     }
 
+    private int clampScore(int score) {
+        return Math.max(0, Math.min(100, score));
+    }
+
+    private double roundToTwoDecimals(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
     private String determineEvidenceStatus(Product product) {
+
+        if (product == null) {
+            return "NO_EVIDENCE";
+        }
+
         List<Evidence> evidenceList = product.getEvidence();
 
         if (evidenceList == null || evidenceList.isEmpty()) {
@@ -51,6 +77,7 @@ public class RankedProductResponse {
         boolean allRejected = true;
 
         for (Evidence evidence : evidenceList) {
+
             if (evidence == null) {
                 allVerified = false;
                 allRejected = false;
@@ -59,11 +86,16 @@ public class RankedProductResponse {
 
             String status = evidence.getReviewStatus();
 
-            if (!"VERIFIED".equals(status) || !evidence.isVerified()) {
+            String normalizedStatus = status == null
+                    ? ""
+                    : status.trim().toUpperCase(Locale.ROOT);
+
+            if (!"VERIFIED".equals(normalizedStatus)
+                    || !evidence.isVerified()) {
                 allVerified = false;
             }
 
-            if (!"REJECTED".equals(status)) {
+            if (!"REJECTED".equals(normalizedStatus)) {
                 allRejected = false;
             }
         }
@@ -104,59 +136,65 @@ public class RankedProductResponse {
     }
 
     public double getSuitabilityContribution() {
-    return suitabilityContribution;
-}
-
-public double getEvidenceContribution() {
-    return evidenceContribution;
-}
-
-private String generateOverallExplanation() {
-    String explanation = "Suitability contributes "
-            + suitabilityContribution
-            + " points and evidence contributes "
-            + evidenceContribution
-            + " points to the overall score of "
-            + overallScore + ".";
-
-    if ("REJECTED".equals(evidenceStatus)) {
-        explanation += " All evidence records are rejected, "
-                + "so evidence confidence is zero.";
-    } else if ("NO_EVIDENCE".equals(evidenceStatus)) {
-        explanation += " No evidence records are available "
-                + "for this product.";
-    } else if ("PENDING_REVIEW".equals(evidenceStatus)) {
-        explanation += " Evidence is pending review or has "
-                + "mixed review statuses.";
-    } else if ("VERIFIED".equals(evidenceStatus)) {
-        explanation += " All evidence records have verified "
-                + "review status; this does not independently "
-                + "guarantee that every claim is factually correct.";
+        return suitabilityContribution;
     }
 
-    return explanation;
-}
-
-public String getOverallExplanation() {
-    return overallExplanation;
-}
-
-private String generateRankingExplanation() {
-    if (evidenceConfidenceScore == 0) {
-        return "This product receives no evidence-confidence points. "
-                + "Its ranking depends entirely on suitability.";
+    public double getEvidenceContribution() {
+        return evidenceContribution;
     }
 
-    if (evidenceContribution > suitabilityContribution) {
-        return "Evidence confidence contributes more to the overall "
-                + "score than suitability.";
+    private String generateOverallExplanation() {
+
+        String explanation = "Suitability contributes "
+                + suitabilityContribution
+                + " points and evidence contributes "
+                + evidenceContribution
+                + " points to the overall score of "
+                + overallScore + ".";
+
+        if ("REJECTED".equals(evidenceStatus)) {
+            explanation += " All evidence records are rejected.";
+        } else if ("NO_EVIDENCE".equals(evidenceStatus)) {
+            explanation += " No evidence records are available.";
+        } else if ("PENDING_REVIEW".equals(evidenceStatus)) {
+            explanation += " Evidence is pending review, incomplete, "
+                    + "or has mixed review statuses.";
+        } else if ("VERIFIED".equals(evidenceStatus)) {
+            explanation += " All evidence records have verified "
+                    + "review status. This does not independently "
+                    + "guarantee claim accuracy.";
+        }
+
+        return explanation;
     }
 
-    return "Suitability contributes more to the overall score "
-            + "than evidence confidence.";
-}
+    public String getOverallExplanation() {
+        return overallExplanation;
+    }
 
-public String getRankingExplanation() {
-    return rankingExplanation;
-}
+    private String generateRankingExplanation() {
+
+        if (evidenceConfidenceScore == 0) {
+            return "This product receives no evidence-confidence "
+                    + "points. Its ranking depends entirely on "
+                    + "suitability.";
+        }
+
+        if (evidenceContribution > suitabilityContribution) {
+            return "Evidence confidence contributes more to the "
+                    + "overall score than suitability.";
+        }
+
+        if (evidenceContribution < suitabilityContribution) {
+            return "Suitability contributes more to the overall "
+                    + "score than evidence confidence.";
+        }
+
+        return "Suitability and evidence confidence contribute "
+                + "equally to the overall score.";
+    }
+
+    public String getRankingExplanation() {
+        return rankingExplanation;
+    }
 }
