@@ -45,10 +45,36 @@ public class Product {
     private String category = "LAPTOP";
 
     // Laptop specifications
+    
+    // Laptop specifications
     private int ram;
     private int storage;
     private double batteryHours;
     private double weight;
+
+    // Additional laptop specifications from imported datasets
+    private String cpuBrand;
+    private String cpuFamily;
+    private String cpuModel;
+    private Integer cpuCores;
+    private Integer cpuThreads;
+
+    private Integer displayWidthPx;
+    private Integer displayHeightPx;
+    private Double displaySizeInch;
+
+    private String gpuBrand;
+    private String gpuModel;
+    private Double gpuVramGb;
+    private String gpuType;
+
+    private String operatingSystem;
+    private Integer warrantyYears;
+    private Double rating;
+
+    // Dataset provenance
+    private String dataSource;
+
 
     // Smartphone specifications
     private double screenSize;
@@ -56,11 +82,14 @@ public class Product {
     private int batteryMah;
 
     // Car specifications
+   // Car specifications
     private String fuelType;
     private String transmission;
     private double mileage;
     private int seatingCapacity;
-
+    private Integer year;
+    private Integer engineCC;
+    private Double serviceCost;
     // Default constructor required for data binding
     public Product() {
     }
@@ -287,4 +316,77 @@ public class Product {
     public void setSeatingCapacity(int seatingCapacity) {
         this.seatingCapacity = seatingCapacity;
     }
+    public Integer getYear() {
+    return year;
+}
+
+public void setYear(Integer year) {
+    this.year = year;
+}
+
+public Integer getEngineCC() {
+    return engineCC;
+}
+
+public void setEngineCC(Integer engineCC) {
+    this.engineCC = engineCC;
+}
+
+public Double getServiceCost() {
+    return serviceCost;
+}
+
+public void setServiceCost(Double serviceCost) {
+    this.serviceCost = serviceCost;
+}
+    
+    // Additional laptop specifications
+    public String getCpuBrand() { return cpuBrand; }
+    public void setCpuBrand(String cpuBrand) { this.cpuBrand = cpuBrand; }
+
+    public String getCpuFamily() { return cpuFamily; }
+    public void setCpuFamily(String cpuFamily) { this.cpuFamily = cpuFamily; }
+
+    public String getCpuModel() { return cpuModel; }
+    public void setCpuModel(String cpuModel) { this.cpuModel = cpuModel; }
+
+    public Integer getCpuCores() { return cpuCores; }
+    public void setCpuCores(Integer cpuCores) { this.cpuCores = cpuCores; }
+
+    public Integer getCpuThreads() { return cpuThreads; }
+    public void setCpuThreads(Integer cpuThreads) { this.cpuThreads = cpuThreads; }
+
+    public Integer getDisplayWidthPx() { return displayWidthPx; }
+    public void setDisplayWidthPx(Integer displayWidthPx) { this.displayWidthPx = displayWidthPx; }
+
+    public Integer getDisplayHeightPx() { return displayHeightPx; }
+    public void setDisplayHeightPx(Integer displayHeightPx) { this.displayHeightPx = displayHeightPx; }
+
+    public Double getDisplaySizeInch() { return displaySizeInch; }
+    public void setDisplaySizeInch(Double displaySizeInch) { this.displaySizeInch = displaySizeInch; }
+
+    public String getGpuBrand() { return gpuBrand; }
+    public void setGpuBrand(String gpuBrand) { this.gpuBrand = gpuBrand; }
+
+    public String getGpuModel() { return gpuModel; }
+    public void setGpuModel(String gpuModel) { this.gpuModel = gpuModel; }
+
+    public Double getGpuVramGb() { return gpuVramGb; }
+    public void setGpuVramGb(Double gpuVramGb) { this.gpuVramGb = gpuVramGb; }
+
+    public String getGpuType() { return gpuType; }
+    public void setGpuType(String gpuType) { this.gpuType = gpuType; }
+
+    public String getOperatingSystem() { return operatingSystem; }
+    public void setOperatingSystem(String operatingSystem) { this.operatingSystem = operatingSystem; }
+
+    public Integer getWarrantyYears() { return warrantyYears; }
+    public void setWarrantyYears(Integer warrantyYears) { this.warrantyYears = warrantyYears; }
+
+    public Double getRating() { return rating; }
+    public void setRating(Double rating) { this.rating = rating; }
+
+    public String getDataSource() { return dataSource; }
+    public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+
 }
