@@ -2,6 +2,7 @@
 
     package com.peds.peds.controller;
     import com.peds.peds.service.LaptopCsvImporter;
+    import com.peds.peds.service.SmartphoneCsvImporter;
     import java.util.ArrayList;
     import java.util.LinkedHashMap;
     import java.util.List;
@@ -35,6 +36,8 @@
         private final EvidenceValidationService evidenceValidationService;
         private final ProductRepository productRepository;
         private final CarCsvImporter carCsvImporter;
+        private final SmartphoneCsvImporter smartphoneCsvImporter;
+        
         
     public ProductController(
         ProductService productService,
@@ -43,7 +46,8 @@
         EvidenceValidationService evidenceValidationService,
         ProductRepository productRepository,
         LaptopCsvImporter laptopCsvImporter,
-        CarCsvImporter carCsvImporter) {
+        CarCsvImporter carCsvImporter,
+        SmartphoneCsvImporter smartphoneCsvImporter) {
 
     this.productService = productService;
     this.recommendationService = recommendationService;
@@ -52,6 +56,7 @@
     this.productRepository = productRepository;
     this.laptopCsvImporter = laptopCsvImporter;
     this.carCsvImporter = carCsvImporter;
+    this.smartphoneCsvImporter = smartphoneCsvImporter;
 }
 
 
@@ -135,27 +140,31 @@
 
                     break;
 
+                    
                 case "SMARTPHONE":
 
-                    if (product.getScreenSize() <= 0) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Screen size must be greater than zero");
-                    }
+                if (product.getScreenSize() == null
+                        || product.getScreenSize() <= 0) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Screen size must be greater than zero");
+                }
 
-                    if (product.getCameraMP() <= 0) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Camera megapixels must be greater than zero");
-                    }
+                if (product.getCameraMP() == null
+                        || product.getCameraMP() <= 0) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Camera megapixels must be greater than zero");
+                }
 
-                    if (product.getBatteryMah() <= 0) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Battery capacity must be greater than zero");
-                    }
+                if (product.getBatteryMah() == null
+                        || product.getBatteryMah() <= 0) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Battery capacity must be greater than zero");
+                }
 
-                    break;
+                break;
 
                 case "CAR":
 
@@ -601,5 +610,18 @@ public Map<String, Object> importCars() {
                             HttpStatus.NOT_FOUND,
                             "Product not found"));
         }
+
+        @PostMapping("/import/smartphones")
+public Map<String, Object> importSmartphones() {
+    try {
+        return smartphoneCsvImporter.importSmartphones();
+    } catch (Exception exception) {
+        throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Smartphone CSV import failed: "
+                        + exception.getMessage(),
+                exception);
+    }
+}
         
     }

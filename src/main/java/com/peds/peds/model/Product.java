@@ -44,15 +44,14 @@ public class Product {
     )
     private String category = "LAPTOP";
 
-    // Laptop specifications
+
     
     // Laptop specifications
-    private int ram;
-    private int storage;
+    private Integer ram;
+    private Integer storage;
     private double batteryHours;
     private double weight;
 
-    // Additional laptop specifications from imported datasets
     private String cpuBrand;
     private String cpuFamily;
     private String cpuModel;
@@ -72,16 +71,36 @@ public class Product {
     private Integer warrantyYears;
     private Double rating;
 
+
     // Dataset provenance
     private String dataSource;
 
 
-    // Smartphone specifications
-    private double screenSize;
-    private int cameraMP;
-    private int batteryMah;
+  // Smartphone specifications
+    private Integer cameraMP;
+    private Integer batteryMah;
+    private Double screenSize;
 
-    // Car specifications
+    private String processorName;
+    private String processorBrand;
+    private Integer coreCount;
+    private Double clockSpeedGhz;
+
+    private Boolean has5G;
+    private Boolean hasNfc;
+    private Boolean hasIrBlaster;
+
+    private Integer refreshRateHz;
+    private Integer chargingWatt;
+    private Boolean fastCharging;
+
+    private Integer rearCameraCount;
+    private Integer frontCameraCount;
+    private Double frontCameraMP;
+
+    private String memoryCardType;
+    private Boolean memoryCardSupported;
+
    // Car specifications
     private String fuelType;
     private String transmission;
@@ -227,19 +246,19 @@ public class Product {
     }
 
     // Laptop specifications
-    public int getRam() {
-        return ram;
+    public Integer getRam() {
+    return ram;
     }
 
-    public void setRam(int ram) {
+    public void setRam(Integer ram) {
         this.ram = ram;
     }
 
-    public int getStorage() {
+    public Integer getStorage() {
         return storage;
     }
 
-    public void setStorage(int storage) {
+    public void setStorage(Integer storage) {
         this.storage = storage;
     }
 
@@ -260,34 +279,33 @@ public class Product {
     }
 
     // Smartphone specifications
-    public double getScreenSize() {
-        return screenSize;
-    }
+    public Double getScreenSize() {
+    return screenSize;
+}
 
-    public void setScreenSize(double screenSize) {
+    public void setScreenSize(Double screenSize) {
         this.screenSize = screenSize;
     }
 
-    public int getCameraMP() {
+    public Integer getCameraMP() {
         return cameraMP;
     }
 
-    public void setCameraMP(int cameraMP) {
+    public void setCameraMP(Integer cameraMP) {
         this.cameraMP = cameraMP;
     }
 
-    public int getBatteryMah() {
+    public Integer getBatteryMah() {
         return batteryMah;
     }
 
-    public void setBatteryMah(int batteryMah) {
+    public void setBatteryMah(Integer batteryMah) {
         this.batteryMah = batteryMah;
     }
-
-    // Car specifications
-    public String getFuelType() {
-        return fuelType;
-    }
+        // Car specifications
+        public String getFuelType() {
+            return fuelType;
+        }
 
     public void setFuelType(String fuelType) {
         this.fuelType = fuelType;
@@ -320,26 +338,67 @@ public class Product {
     return year;
 }
 
-public void setYear(Integer year) {
-    this.year = year;
-}
+    public void setYear(Integer year) {
+        this.year = year;
+    }
 
-public Integer getEngineCC() {
-    return engineCC;
-}
+    public Integer getEngineCC() {
+        return engineCC;
+    }
 
-public void setEngineCC(Integer engineCC) {
-    this.engineCC = engineCC;
-}
+    public void setEngineCC(Integer engineCC) {
+        this.engineCC = engineCC;
+    }
 
-public Double getServiceCost() {
-    return serviceCost;
-}
+    public Double getServiceCost() {
+        return serviceCost;
+    }
 
-public void setServiceCost(Double serviceCost) {
-    this.serviceCost = serviceCost;
-}
-    
+    public void setServiceCost(Double serviceCost) {
+        this.serviceCost = serviceCost;
+    }
+    public String getProcessorName() { return processorName; }
+    public void setProcessorName(String processorName) { this.processorName = processorName; }
+
+    public String getProcessorBrand() { return processorBrand; }
+    public void setProcessorBrand(String processorBrand) { this.processorBrand = processorBrand; }
+
+    public Integer getCoreCount() { return coreCount; }
+    public void setCoreCount(Integer coreCount) { this.coreCount = coreCount; }
+
+    public Double getClockSpeedGhz() { return clockSpeedGhz; }
+    public void setClockSpeedGhz(Double clockSpeedGhz) { this.clockSpeedGhz = clockSpeedGhz; }
+
+    public Boolean getHas5G() { return has5G; }
+    public void setHas5G(Boolean has5G) { this.has5G = has5G; }
+
+    public Boolean getHasNfc() { return hasNfc; }
+    public void setHasNfc(Boolean hasNfc) { this.hasNfc = hasNfc; }
+
+    public Boolean getHasIrBlaster() { return hasIrBlaster; }
+    public void setHasIrBlaster(Boolean hasIrBlaster) { this.hasIrBlaster = hasIrBlaster; }
+
+    public Integer getRefreshRateHz() { return refreshRateHz; }
+    public void setRefreshRateHz(Integer refreshRateHz) { this.refreshRateHz = refreshRateHz; }
+
+    public Integer getChargingWatt() { return chargingWatt; }
+    public void setChargingWatt(Integer chargingWatt) { this.chargingWatt = chargingWatt; }
+
+    public Integer getRearCameraCount() { return rearCameraCount; }
+    public void setRearCameraCount(Integer rearCameraCount) { this.rearCameraCount = rearCameraCount; }
+
+    public Integer getFrontCameraCount() { return frontCameraCount; }
+    public void setFrontCameraCount(Integer frontCameraCount) { this.frontCameraCount = frontCameraCount; }
+
+    public Double getFrontCameraMP() { return frontCameraMP; }
+    public void setFrontCameraMP(Double frontCameraMP) { this.frontCameraMP = frontCameraMP; }
+
+    public String getMemoryCardType() { return memoryCardType; }
+    public void setMemoryCardType(String memoryCardType) { this.memoryCardType = memoryCardType; }
+
+    public Boolean getMemoryCardSupported() { return memoryCardSupported; }
+    public void setMemoryCardSupported(Boolean memoryCardSupported) { this.memoryCardSupported = memoryCardSupported; }
+
     // Additional laptop specifications
     public String getCpuBrand() { return cpuBrand; }
     public void setCpuBrand(String cpuBrand) { this.cpuBrand = cpuBrand; }
@@ -388,5 +447,11 @@ public void setServiceCost(Double serviceCost) {
 
     public String getDataSource() { return dataSource; }
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+    public Boolean getFastCharging() {
+        return fastCharging;
+    }
 
+    public void setFastCharging(Boolean fastCharging) {
+        this.fastCharging = fastCharging;
+    }
 }
