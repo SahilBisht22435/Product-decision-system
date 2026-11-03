@@ -30,167 +30,183 @@ public class SmartphoneCsvImporter {
         this.productRepository = productRepository;
     }
 
-    public Map<String, Object> importSmartphones() throws Exception {
 
-        Set<String> existingProducts = new HashSet<>();
+public Map<String, Object> importSmartphones() throws Exception {
 
-        for (Product product : productRepository.findAll()) {
-            if ("SMARTPHONE".equalsIgnoreCase(product.getCategory())) {
-                existingProducts.add(
-                        createKey(product.getBrand(), product.getName()));
+    // Load only smartphones previously imported from this CSV.
+    Map<String, Product> existingProducts = new LinkedHashMap<>();
+
+    List<Product> existingList =
+            productRepository.findByCategoryIgnoreCaseAndDataSource(
+                    "SMARTPHONE", "smartphones.csv");
+
+    for (Product product : existingList) {
+        String key = createKey(product.getBrand(), product.getName());
+        existingProducts.putIfAbsent(key, product);
+    }
+
+    List<Product> productsToSave = new ArrayList<>();
+    Set<String> processedKeys = new HashSet<>();
+
+    int inserted = 0;
+    int updated = 0;
+    int skipped = 0;
+
+    ClassPathResource resource =
+            new ClassPathResource("datasets/smartphones.csv");
+
+    try (
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        resource.getInputStream(),
+                        StandardCharsets.UTF_8));
+
+        CSVParser parser = CSVParser.parse(
+                reader,
+                CSVFormat.DEFAULT.builder()
+                        .setHeader()
+                        .setSkipHeaderRecord(true)
+                        .setAllowMissingColumnNames(true)
+                        .setTrim(true)
+                        .get())
+    ) {
+
+        for (CSVRecord row : parser) {
+
+            String brand = row.get(0).trim();
+            String model = value(row, "model");
+            double price = decimalValue(row, "price_inr");
+
+            if (brand.isBlank() || model.isBlank() || price <= 0) {
+                skipped++;
+                continue;
             }
-        }
 
-        List<Product> productsToSave = new ArrayList<>();
-        int skipped = 0;
+            String key = createKey(brand, model);
 
-        ClassPathResource resource =
-                new ClassPathResource("datasets/smartphones.csv");
+            // Avoid processing duplicate CSV rows.
+            if (!processedKeys.add(key)) {
+                skipped++;
+                continue;
+            }
 
-        try (
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(
-                            resource.getInputStream(),
-                            StandardCharsets.UTF_8));
+            Product product = existingProducts.get(key);
 
-            CSVParser parser = CSVParser.parse(
-                    reader,
-                    CSVFormat.DEFAULT.builder()
-                            .setHeader()
-                            .setSkipHeaderRecord(true)
-                            .setAllowMissingColumnNames(true)
-                            .setTrim(true)
-                            .get())
-        ) {
+            boolean isNew = product == null;
 
-            for (CSVRecord row : parser) {
-
-                // First column has no header and contains the brand.
-                String brand = row.get(0).trim();
-
-                String model = value(row, "model");
-                double price = decimalValue(row, "price_inr");
-
-                if (brand.isBlank() || model.isBlank() || price <= 0) {
-                    skipped++;
-                    continue;
-                }
-
-                String key = createKey(brand, model);
-
-                if (!existingProducts.add(key)) {
-                    skipped++;
-                    continue;
-                }
-
-                Product product = new Product();
-
-                // Common product details
-                product.setName(model);
-                product.setBrand(brand);
-                product.setPrice(price);
-                product.setCategory("SMARTPHONE");
-
-                // Rating score (0-100 scale)
-                product.setRating(
-                        nullableDecimal(row, "rating_score"));
-
-                // Processor specifications
-                product.setProcessorName(
-                        value(row, "processor_name"));
-                product.setProcessorBrand(
-                        value(row, "processor_brand"));
-
-                product.setCoreCount(
-                        nullableInteger(row, "core_count"));
-                product.setClockSpeedGhz(
-                        nullableDecimal(row, "clock_speed_ghz"));
-
-                // Memory specifications
-                product.setRam(integerValue(row, "ram_gb"));
-                product.setStorage(integerValue(row, "storage_gb"));
-
-                // Network and connectivity
-                product.setHas5G(
-                        nullableBoolean(row, "has_5g"));
-                product.setHasNfc(
-                        nullableBoolean(row, "has_nfc"));
-                product.setHasIrBlaster(
-                        nullableBoolean(row, "has_ir_blaster"));
-
-                // Display specifications
-                Double displaySize =
-                        nullableDecimal(row, "display_inches");
-
-                if (displaySize != null) {
-                    product.setScreenSize(displaySize);
-                    product.setDisplaySizeInch(displaySize);
-                }
-
-                product.setDisplayWidthPx(
-                        nullableInteger(row, "res_width_px"));
-                product.setDisplayHeightPx(
-                        nullableInteger(row, "res_height_px"));
-
-                product.setRefreshRateHz(
-                        nullableInteger(row, "refresh_rate_hz"));
-
-                // Battery and charging
-                product.setBatteryMah(
-                        nullableInteger(row, "battery_mah"));
-
-                product.setFastCharging(
-                        nullableBoolean(row, "fast_charging"));
-
-                product.setChargingWatt(
-                        nullableInteger(row, "charging_watt"));
-
-                // Camera specifications
-                product.setRearCameraCount(
-                        nullableInteger(row, "rear_camera_count"));
-
-                product.setFrontCameraCount(
-                        nullableInteger(row, "front_camera_count"));
-
-                product.setCameraMP(
-                        nullableInteger(row, "rear_camera_main_mp"));
-
-                product.setFrontCameraMP(
-                        nullableDecimal(row, "front_camera_main_mp"));
-
-                // Operating system
-                product.setOperatingSystem(
-                        value(row, "os_name"));
-
-                // Memory card support
-                product.setMemoryCardSupported(
-                        nullableBoolean(row, "memory_card_supported"));
-
-                product.setMemoryCardType(
-                        value(row, "memory_card_type"));
-
-                // Dataset information
-                product.setDataSource("smartphones.csv");
+            if (isNew) {
+                product = new Product();
 
                 product.setEvidenceSource(
                         "Unverified dataset import: smartphones.csv");
 
                 product.setVerified(false);
+                product.setDataSource("smartphones.csv");
 
-                productsToSave.add(product);
+                inserted++;
+            } else {
+                updated++;
+            }
+
+            // Common product details
+            product.setName(model);
+            product.setBrand(brand);
+            product.setPrice(price);
+            product.setCategory("SMARTPHONE");
+
+            // Rating score (0-100 scale)
+            product.setRating(
+                    nullableDecimal(row, "rating_score"));
+
+            // Processor specifications
+            product.setProcessorName(
+                    value(row, "processor_name"));
+            product.setProcessorBrand(
+                    value(row, "processor_brand"));
+
+            product.setCoreCount(
+                    nullableInteger(row, "core_count"));
+            product.setClockSpeedGhz(
+                    nullableDecimal(row, "clock_speed_ghz"));
+
+            // Memory specifications
+            product.setRam(integerValue(row, "ram_gb"));
+            product.setStorage(integerValue(row, "storage_gb"));
+
+            // Network and connectivity
+            product.setHas5G(nullableBoolean(row, "has_5g"));
+            product.setHasNfc(nullableBoolean(row, "has_nfc"));
+            product.setHasIrBlaster(
+                    nullableBoolean(row, "has_ir_blaster"));
+
+            // Display specifications
+            Double displaySize =
+                    nullableDecimal(row, "display_inches");
+
+            product.setScreenSize(displaySize);
+            product.setDisplaySizeInch(displaySize);
+
+            product.setDisplayWidthPx(
+                    nullableInteger(row, "res_width_px"));
+            product.setDisplayHeightPx(
+                    nullableInteger(row, "res_height_px"));
+
+            product.setRefreshRateHz(
+                    nullableInteger(row, "refresh_rate_hz"));
+
+            // Battery and charging
+            product.setBatteryMah(
+                    nullableInteger(row, "battery_mah"));
+
+            product.setFastCharging(
+                    nullableBoolean(row, "fast_charging"));
+
+            product.setChargingWatt(
+                    nullableInteger(row, "charging_watt"));
+
+            // Camera specifications
+            product.setRearCameraCount(
+                    nullableInteger(row, "rear_camera_count"));
+
+            product.setFrontCameraCount(
+                    nullableInteger(row, "front_camera_count"));
+
+            product.setCameraMP(
+                    nullableInteger(row, "rear_camera_main_mp"));
+
+            product.setFrontCameraMP(
+                    nullableDecimal(row, "front_camera_main_mp"));
+
+            // Operating system
+            product.setOperatingSystem(value(row, "os_name"));
+
+            // Memory card support
+            product.setMemoryCardSupported(
+                    nullableBoolean(row, "memory_card_supported"));
+
+            product.setMemoryCardType(
+                    value(row, "memory_card_type"));
+
+            productsToSave.add(product);
+
+            if (isNew) {
+                existingProducts.put(key, product);
             }
         }
-
-        productRepository.saveAll(productsToSave);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-
-        result.put("imported", productsToSave.size());
-        result.put("skipped", skipped);
-        result.put("message", "Smartphone CSV import completed.");
-
-        return result;
     }
+
+    productRepository.saveAll(productsToSave);
+
+    Map<String, Object> result = new LinkedHashMap<>();
+
+    result.put("inserted", inserted);
+    result.put("updated", updated);
+    result.put("skipped", skipped);
+    result.put("message", "Smartphone CSV import completed.");
+
+    return result;
+}
+
 
     private String value(CSVRecord row, String column) {
         String result = row.get(column);

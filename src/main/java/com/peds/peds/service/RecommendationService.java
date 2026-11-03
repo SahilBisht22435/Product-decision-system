@@ -93,73 +93,84 @@ public class RecommendationService {
     }
 
     // Smartphone score: maximum 100
-    private int calculateSmartphoneScore(Product product) {
 
-        int score = 0;
+private int calculateSmartphoneScore(Product product) {
 
-        // RAM: maximum 20
-        double ram = product.getRam();
+    int score = 0;
 
-        if (Double.isFinite(ram) && ram >= 12) {
-            score += 20;
-        } else if (Double.isFinite(ram) && ram >= 8) {
-            score += 15;
-        } else if (Double.isFinite(ram) && ram >= 4) {
-            score += 10;
-        }
+    // RAM: maximum 15
+    Integer ram = product.getRam();
 
-        // Storage: maximum 20
-        double storage = product.getStorage();
-
-        if (Double.isFinite(storage) && storage >= 512) {
-            score += 20;
-        } else if (Double.isFinite(storage) && storage >= 256) {
-            score += 15;
-        } else if (Double.isFinite(storage) && storage >= 128) {
-            score += 10;
-        } else if (Double.isFinite(storage) && storage > 0) {
-            score += 5;
-        }
-
-        // Camera resolution: maximum 20
-        double cameraMP = product.getCameraMP();
-
-        if (Double.isFinite(cameraMP) && cameraMP >= 100) {
-            score += 20;
-        } else if (Double.isFinite(cameraMP) && cameraMP >= 50) {
-            score += 15;
-        } else if (Double.isFinite(cameraMP) && cameraMP >= 12) {
-            score += 10;
-        } else if (Double.isFinite(cameraMP) && cameraMP > 0) {
-            score += 5;
-        }
-
-        // Battery capacity: maximum 25
-        double batteryMah = product.getBatteryMah();
-
-        if (Double.isFinite(batteryMah) && batteryMah >= 6000) {
-            score += 25;
-        } else if (Double.isFinite(batteryMah) && batteryMah >= 5000) {
-            score += 20;
-        } else if (Double.isFinite(batteryMah) && batteryMah >= 4000) {
-            score += 15;
-        } else if (Double.isFinite(batteryMah) && batteryMah > 0) {
-            score += 5;
-        }
-
-        // Screen size: maximum 15
-        double screenSize = product.getScreenSize();
-
-        if (Double.isFinite(screenSize)
-                && screenSize >= 6.5
-                && screenSize <= 6.9) {
-            score += 15;
-        } else if (Double.isFinite(screenSize) && screenSize > 0) {
-            score += 10;
-        }
-
-        return score;
+    if (ram != null && ram >= 12) {
+        score += 15;
+    } else if (ram != null && ram >= 8) {
+        score += 12;
+    } else if (ram != null && ram >= 6) {
+        score += 9;
+    } else if (ram != null && ram >= 4) {
+        score += 6;
     }
+
+    // Storage: maximum 15
+    Integer storage = product.getStorage();
+
+    if (storage != null && storage >= 512) {
+        score += 15;
+    } else if (storage != null && storage >= 256) {
+        score += 12;
+    } else if (storage != null && storage >= 128) {
+        score += 9;
+    } else if (storage != null && storage > 0) {
+        score += 5;
+    }
+
+    // Rear camera: maximum 15
+    Integer cameraMP = product.getCameraMP();
+
+    if (cameraMP != null && cameraMP >= 100) {
+        score += 15;
+    } else if (cameraMP != null && cameraMP >= 50) {
+        score += 12;
+    } else if (cameraMP != null && cameraMP >= 12) {
+        score += 9;
+    } else if (cameraMP != null && cameraMP > 0) {
+        score += 5;
+    }
+
+    // Battery: maximum 20
+    Integer batteryMah = product.getBatteryMah();
+
+    if (batteryMah != null && batteryMah >= 6000) {
+        score += 20;
+    } else if (batteryMah != null && batteryMah >= 5000) {
+        score += 16;
+    } else if (batteryMah != null && batteryMah >= 4000) {
+        score += 12;
+    } else if (batteryMah != null && batteryMah > 0) {
+        score += 5;
+    }
+
+    // Display size: maximum 10
+    Double screenSize = product.getScreenSize();
+
+    if (screenSize != null
+            && screenSize >= 6.5
+            && screenSize <= 6.9) {
+        score += 10;
+    } else if (screenSize != null && screenSize > 0) {
+        score += 7;
+    }
+
+    // User rating: maximum 25
+    Double rating = product.getRating();
+
+    if (rating != null && rating > 0) {
+        score += (int) Math.round(
+                Math.min(rating, 100) * 25 / 100.0);
+    }
+
+    return score;
+}
 
     // Car score: maximum 100
     private int calculateCarScore(Product product) {

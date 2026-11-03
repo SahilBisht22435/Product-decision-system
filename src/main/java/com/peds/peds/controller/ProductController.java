@@ -8,6 +8,7 @@
     import java.util.List;
     import java.util.Locale;
     import java.util.Map;
+
     import com.peds.peds.service.CarCsvImporter;
     import com.peds.peds.dto.EvidenceReviewRequest;
     import com.peds.peds.dto.RankedProductResponse;
@@ -37,8 +38,8 @@
         private final ProductRepository productRepository;
         private final CarCsvImporter carCsvImporter;
         private final SmartphoneCsvImporter smartphoneCsvImporter;
-        
-        
+
+
     public ProductController(
         ProductService productService,
         RecommendationService recommendationService,
@@ -140,7 +141,7 @@
 
                     break;
 
-                    
+
                 case "SMARTPHONE":
 
                 if (product.getScreenSize() == null
@@ -340,53 +341,72 @@
 
         // Recommend products by their names and return suitability reasons
         @GetMapping("/recommend")
-        public List<Map<String, Object>> recommendProducts(
-                @RequestParam List<String> names) {
+public List<Map<String, Object>> recommendProducts(
+        @RequestParam List<String> names) {
 
-            List<Product> products =
-                    productService.compareProductsByName(names);
+    List<Product> products =
+            productService.compareProductsByName(names);
 
-            return products.stream().map(product -> {
+    return products.stream().map(product -> {
 
-                int score =
-                        recommendationService.calculateScore(product);
+        int score =
+                recommendationService.calculateScore(product);
 
-                Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
-                result.put("name", product.getName());
-                result.put("brand", product.getBrand());
-                result.put("price", product.getPrice());
-                result.put("ram", product.getRam());
-                result.put("storage", product.getStorage());
-                result.put("batteryHours", product.getBatteryHours());
-                result.put("weight", product.getWeight());
-                result.put("suitabilityScore", score);
+        result.put("name", product.getName());
+        result.put("brand", product.getBrand());
+        result.put("price", product.getPrice());
+        result.put("ram", product.getRam());
+        result.put("storage", product.getStorage());
 
-                List<String> reasons = new ArrayList<>();
+        // Smartphone specifications
+        result.put("screenSize", product.getScreenSize());
+        result.put("cameraMP", product.getCameraMP());
+        result.put("batteryMah", product.getBatteryMah());
+        result.put("rating", product.getRating());
 
-                if (product.getRam() >= 16) {
-                    reasons.add("Good RAM capacity: 16 GB or more");
-                }
+        // Recommendation score
+        result.put("suitabilityScore", score);
 
-                if (product.getStorage() >= 512) {
-                    reasons.add("At least 512 GB storage");
-                }
+        // Category-specific recommendation reasons
+        result.put(
+                "reasons",
+                productService.getRecommendationReasons(product));
 
-                if (product.getBatteryHours() >= 7) {
-                    reasons.add("Battery rating of 7 hours or more");
-                }
+        return result;
 
-                if (product.getWeight() > 0
-                        && product.getWeight() <= 1.8) {
-                    reasons.add("Weight is 1.8 kg or less");
-                }
+    }).toList();
+}
 
-                result.put("reasons", reasons);
+@GetMapping("/scored")
+public List<RankedProductResponse> getAllProductsWithScores() {
+    return productService.getAllProductsWithScores();
+}
 
-                return result;
-            }).toList();
-        }
 
+@GetMapping("/search")
+public List<Product> searchProducts(
+        @RequestParam(required = false) String category,
+        @RequestParam(required = false) String brand,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Double minPrice,
+        @RequestParam(required = false) Double maxPrice) {
+
+    return productService.searchProducts(
+            category,
+            brand,
+            keyword,
+            minPrice,
+            maxPrice);
+}
+
+@GetMapping("/brands")
+public List<String> getBrands(
+        @RequestParam(required = false) String category) {
+
+    return productService.getBrandsByCategory(category);
+}
         // Retrieve one product by ID
         @GetMapping("/{id}")
         public Product getProductById(@PathVariable String id) {
@@ -623,5 +643,5 @@ public Map<String, Object> importSmartphones() {
                 exception);
     }
 }
-        
+
     }

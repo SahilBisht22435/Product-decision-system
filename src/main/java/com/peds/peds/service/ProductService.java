@@ -1,11 +1,14 @@
 
 package com.peds.peds.service;
-
+import java.util.regex.Pattern;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 import com.peds.peds.dto.RankedProductResponse;
 import com.peds.peds.model.Evidence;
@@ -23,20 +26,142 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final RecommendationService recommendationService;
     private final EvidenceService evidenceService;
+    private final MongoTemplate mongoTemplate;
 
     public ProductService(
             ProductRepository productRepository,
             RecommendationService recommendationService,
-            EvidenceService evidenceService) {
+            EvidenceService evidenceService,
+            MongoTemplate mongoTemplate) {
 
         this.productRepository = productRepository;
         this.recommendationService = recommendationService;
         this.evidenceService = evidenceService;
+        this.mongoTemplate = mongoTemplate;
     }
+
+    public List<String> getBrandsByCategory(String category) {
+
+    Query query = new Query();
+
+    if (category != null
+            && !category.isBlank()
+            && !category.equalsIgnoreCase("all")) {
+
+        String normalizedCategory = validateCategory(category);
+
+        query.addCriteria(
+                Criteria.where("category").is(normalizedCategory)
+        );
+    }
+
+    return mongoTemplate
+            .findDistinct(query, "brand", Product.class, String.class)
+            .stream()
+            .filter(brand -> brand != null && !brand.isBlank())
+            .distinct()
+            .sorted(String.CASE_INSENSITIVE_ORDER)
+            .toList();
+}
+
+public List<Product> searchProducts(
+        String category,
+        String brand,
+        String keyword,
+        Double minPrice,
+        Double maxPrice) {
+
+    String normalizedCategory = null;
+
+    if (category != null
+            && !category.isBlank()
+            && !category.equalsIgnoreCase("all")) {
+
+        normalizedCategory = validateCategory(category);
+    }
+
+    if (minPrice != null
+            && (!Double.isFinite(minPrice) || minPrice < 0)) {
+
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Minimum price cannot be negative or invalid");
+    }
+
+    if (maxPrice != null
+            && (!Double.isFinite(maxPrice) || maxPrice < 0)) {
+
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Maximum price cannot be negative or invalid");
+    }
+
+    if (minPrice != null
+            && maxPrice != null
+            && minPrice > maxPrice) {
+
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Minimum price cannot exceed maximum price");
+    }
+
+    Query query = new Query();
+
+    if (normalizedCategory != null) {
+        query.addCriteria(
+                Criteria.where("category").is(normalizedCategory));
+    }
+
+    if (brand != null && !brand.isBlank()) {
+        query.addCriteria(
+                Criteria.where("brand")
+                        .regex(Pattern.quote(brand.trim()), "i"));
+    }
+
+    if (keyword != null && !keyword.isBlank()) {
+        query.addCriteria(
+                Criteria.where("name")
+                        .regex(Pattern.quote(keyword.trim()), "i"));
+    }
+
+
+if (minPrice != null || maxPrice != null) {
+
+    Criteria priceCriteria = Criteria.where("price");
+
+    if (minPrice != null) {
+        priceCriteria.gte(minPrice);
+    }
+
+    if (maxPrice != null) {
+        priceCriteria.lte(maxPrice);
+    }
+
+    query.addCriteria(priceCriteria);
+}
+
+
+    return mongoTemplate.find(query, Product.class);
+}
+
 
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
+
+    public List<RankedProductResponse> getAllProductsWithScores() {
+
+    List<Product> products = productRepository.findAll();
+
+    return products.stream()
+            .map(product -> new RankedProductResponse(
+                    product,
+                    recommendationService.calculateScore(product),
+                    getRecommendationReasons(product),
+                    evidenceService.calculateConfidenceScore(product)
+            ))
+            .toList();
+}
 
     private void validateBudget(double budget) {
         if (!Double.isFinite(budget) || budget <= 0) {
@@ -148,7 +273,7 @@ public class ProductService {
         return normalizedCategory;
     }
 
-    private List<String> getRecommendationReasons(Product product) {
+    public List<String> getRecommendationReasons(Product product) {
 
         List<String> reasons = new ArrayList<>();
 
